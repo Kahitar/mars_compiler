@@ -2,7 +2,7 @@ use std::{fmt::Write, process::exit};
 
 #[derive(Debug)]
 pub enum TokenType {
-    Exit,
+    Keyword(KeywordType),
     IntLit,
     Semi,
     Iden,
@@ -10,8 +10,25 @@ pub enum TokenType {
 
 #[derive(Debug)]
 pub struct Token {
-    pub _type: TokenType,
+    pub kind: TokenType,
     pub value: Option<String>,
+}
+
+#[derive(Debug)]
+pub enum KeywordType {
+    Exit,
+}
+
+impl KeywordType {
+    fn is_keyword(word: &str) -> bool {
+        KeywordType::to_keyword(word).is_some()
+    }
+    fn to_keyword(word: &str) -> Option<KeywordType> {
+        match word {
+            "exit" => Some(KeywordType::Exit),
+            _ => None,
+        }
+    }
 }
 
 pub struct Tokenizer {
@@ -47,14 +64,14 @@ pub fn tokenize_iden(tokenizer: &mut Tokenizer) -> Token {
         write!(&mut iden, "{}", tokenizer.consume(0).unwrap()).unwrap();
     }
 
-    if iden == "exit" {
+    if KeywordType::is_keyword(&iden) {
         Token {
-            _type: TokenType::Exit,
+            kind: TokenType::Keyword(KeywordType::to_keyword(&iden).unwrap()),
             value: None,
         }
     } else {
         Token {
-            _type: TokenType::Iden,
+            kind: TokenType::Iden,
             value: Some(iden),
         }
     }
@@ -66,7 +83,7 @@ pub fn tokenize_int_lit(tokenizer: &mut Tokenizer) -> Token {
         write!(&mut int_lit, "{}", tokenizer.consume(0).unwrap()).unwrap();
     }
     Token {
-        _type: TokenType::IntLit,
+        kind: TokenType::IntLit,
         value: Some(int_lit),
     }
 }
@@ -79,25 +96,26 @@ pub fn tokenize(src: String) -> Vec<Token> {
 
     let mut tokens: Vec<Token> = vec![];
     while tokenizer.seek(0).is_some() {
-        if tokenizer.seek(0).is_some_and(|c| c.is_alphabetic()) {
+        let seeked = tokenizer.seek(0);
+        if seeked.is_some_and(|c| c.is_alphabetic()) {
             tokens.push(tokenize_iden(&mut tokenizer));
-        } else if tokenizer.seek(0).is_some_and(|c| c.is_numeric()) {
+        } else if seeked.is_some_and(|c| c.is_numeric()) {
             tokens.push(tokenize_int_lit(&mut tokenizer));
-        } else if tokenizer.seek(0).is_some_and(|x| x.is_whitespace()) {
+        } else if seeked.is_some_and(|x| x.is_whitespace()) {
             tokenizer.consume(0);
-        } else if tokenizer.seek(0).is_some_and(|c| c == ';') {
+        } else if seeked.is_some_and(|c| c == ';') {
             tokens.push(Token {
-                _type: TokenType::Semi,
+                kind: TokenType::Semi,
                 value: None,
             });
             tokenizer.consume(0);
-        } else if tokenizer.seek(0).is_none() {
+        } else if seeked.is_none() {
             println!("Found end of source.");
             break;
         } else {
             eprintln!(
                 "unhandled case in tokenizer. Found unexpected character `{}`",
-                tokenizer.seek(0).unwrap()
+                seeked.unwrap()
             );
             exit(1);
         }
