@@ -30,13 +30,13 @@ pub struct Tokenizer {
     pub curr_idx: usize,
 }
 
-trait Seeker<T> {
-    fn seek(&mut self, offset: usize) -> Option<T>;
+trait Peaker<T> {
+    fn peak(&mut self, offset: usize) -> Option<T>;
     fn consume(&mut self, offset: usize) -> Option<T>;
 }
 
-impl Seeker<char> for Tokenizer {
-    fn seek(&mut self, offset: usize) -> Option<char> {
+impl Peaker<char> for Tokenizer {
+    fn peak(&mut self, offset: usize) -> Option<char> {
         if self.curr_idx + offset >= self.source.len() {
             println!("Reached end of source");
             return None;
@@ -46,7 +46,7 @@ impl Seeker<char> for Tokenizer {
     }
 
     fn consume(&mut self, offset: usize) -> Option<char> {
-        let c = self.seek(offset);
+        let c = self.peak(offset);
         self.curr_idx += offset + 1;
         c
     }
@@ -54,8 +54,8 @@ impl Seeker<char> for Tokenizer {
 
 pub fn tokenize_iden(tokenizer: &mut Tokenizer) -> Token {
     let mut iden = String::new();
-    while tokenizer.seek(0).is_some_and(|c| c.is_alphanumeric()) {
-        write!(&mut iden, "{}", tokenizer.consume(0).unwrap()).unwrap();
+    while tokenizer.peak(0).is_some_and(|c| c.is_alphanumeric()) {
+        iden.push(tokenizer.consume(0).unwrap());
     }
 
     if KeywordType::is_keyword(&iden) {
@@ -67,7 +67,7 @@ pub fn tokenize_iden(tokenizer: &mut Tokenizer) -> Token {
 
 pub fn tokenize_int_lit(tokenizer: &mut Tokenizer) -> Token {
     let mut int_lit = String::new();
-    while tokenizer.seek(0).is_some_and(|c| c.is_numeric()) {
+    while tokenizer.peak(0).is_some_and(|c| c.is_numeric()) {
         write!(&mut int_lit, "{}", tokenizer.consume(0).unwrap()).unwrap();
     }
     Token::IntLit(int_lit)
@@ -80,27 +80,27 @@ pub fn tokenize(src: String) -> Vec<Token> {
     };
 
     let mut tokens: Vec<Token> = vec![];
-    while tokenizer.seek(0).is_some() {
-        let seeked = tokenizer.seek(0);
-        if seeked.is_some_and(|c| c.is_alphabetic()) {
-            tokens.push(tokenize_iden(&mut tokenizer));
-        } else if seeked.is_some_and(|c| c.is_numeric()) {
-            tokens.push(tokenize_int_lit(&mut tokenizer));
-        } else if seeked.is_some_and(|x| x.is_whitespace()) {
-            tokenizer.consume(0);
-        } else if seeked.is_some_and(|c| c == ';') {
-            tokens.push(Token::Semi);
-            tokenizer.consume(0);
-        } else if seeked.is_none() {
-            println!("Found end of source.");
-            break;
-        } else {
-            eprintln!(
-                "unhandled case in tokenizer. Found unexpected character `{}`",
-                seeked.unwrap()
-            );
-            exit(1);
+    while let Some(c) = tokenizer.peak(0) {
+        match c {
+            c if c.is_alphabetic() => tokens.push(tokenize_iden(&mut tokenizer)),
+            c if c.is_numeric() => tokens.push(tokenize_int_lit(&mut tokenizer)),
+            c if c.is_whitespace() => {
+                tokenizer.consume(0);
+            }
+            ';' => {
+                tokens.push(Token::Semi);
+                tokenizer.consume(0);
+            }
+            _ => {
+                eprintln!(
+                    "unhandled case in tokenizer. Found unexpected character `{}`",
+                    c
+                );
+                exit(1);
+            }
         }
     }
+
+    println!("Found end of source.");
     tokens
 }
