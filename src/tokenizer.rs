@@ -36,7 +36,7 @@ impl Seeker<char> for Tokenizer {
 
     fn consume(&mut self, offset: usize) -> Option<char> {
         let c = self.seek(offset);
-        self.curr_idx += 1;
+        self.curr_idx += offset + 1;
         c
     }
 }
