@@ -1,17 +1,11 @@
 use std::{fmt::Write, process::exit};
 
 #[derive(Debug)]
-pub enum TokenType {
+pub enum Token {
     Keyword(KeywordType),
-    IntLit,
+    IntLit(String),
     Semi,
-    Iden,
-}
-
-#[derive(Debug)]
-pub struct Token {
-    pub kind: TokenType,
-    pub value: Option<String>,
+    Iden(String),
 }
 
 #[derive(Debug)]
@@ -65,15 +59,9 @@ pub fn tokenize_iden(tokenizer: &mut Tokenizer) -> Token {
     }
 
     if KeywordType::is_keyword(&iden) {
-        Token {
-            kind: TokenType::Keyword(KeywordType::to_keyword(&iden).unwrap()),
-            value: None,
-        }
+        Token::Keyword(KeywordType::to_keyword(&iden).unwrap())
     } else {
-        Token {
-            kind: TokenType::Iden,
-            value: Some(iden),
-        }
+        Token::Iden(iden)
     }
 }
 
@@ -82,10 +70,7 @@ pub fn tokenize_int_lit(tokenizer: &mut Tokenizer) -> Token {
     while tokenizer.seek(0).is_some_and(|c| c.is_numeric()) {
         write!(&mut int_lit, "{}", tokenizer.consume(0).unwrap()).unwrap();
     }
-    Token {
-        kind: TokenType::IntLit,
-        value: Some(int_lit),
-    }
+    Token::IntLit(int_lit)
 }
 
 pub fn tokenize(src: String) -> Vec<Token> {
@@ -104,10 +89,7 @@ pub fn tokenize(src: String) -> Vec<Token> {
         } else if seeked.is_some_and(|x| x.is_whitespace()) {
             tokenizer.consume(0);
         } else if seeked.is_some_and(|c| c == ';') {
-            tokens.push(Token {
-                kind: TokenType::Semi,
-                value: None,
-            });
+            tokens.push(Token::Semi);
             tokenizer.consume(0);
         } else if seeked.is_none() {
             println!("Found end of source.");
