@@ -9,5 +9,5 @@ pub fn parse_arguments() -> (String, String) {
 pub fn print_usage_and_exit() {
     eprintln!("Incorrect usage. Correct ussage is...");
     eprintln!("  <infile> <outfile>");
-    std::process::exit(-1);
+    std::process::exit(1);
 }
