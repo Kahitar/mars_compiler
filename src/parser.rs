@@ -28,8 +28,31 @@ impl Parser {
     fn parse_keyword_expression(&mut self) -> Result<String, &'static str> {
         match self.consume() {
             Some(Token::Keyword(KeywordType::Exit)) => self.parse_keyword_exit(),
+            Some(Token::Keyword(KeywordType::Let)) => self.parse_keyword_iden(),
             _ => Err("Unhandled KeywordType"),
         }
+    }
+
+    fn parse_keyword_iden(&mut self) -> Result<String, &'static str> {
+        let iden_value = match self.consume() {
+            Some(Token::Iden(v)) => v,
+            _ => return Err("Expected identifier"),
+        };
+        if self.consume() != Some(Token::Eq) {
+            return Err("Expected eq token");
+        };
+        let lit_value = match self.consume() {
+            Some(Token::IntLit(v)) => v,
+            _ => return Err("Expected literal value"),
+        };
+        if self.consume() != Some(Token::Semi) {
+            return Err("Expected semi token");
+        };
+        // TODO: Make assembly
+        Ok(format!(
+            "    let {} = {} (TODO: assembly)\n",
+            iden_value, lit_value
+        ))
     }
 
     fn parse_keyword_exit(&mut self) -> Result<String, &'static str> {

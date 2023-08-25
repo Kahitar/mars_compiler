@@ -5,14 +5,15 @@ use std::process::exit;
 pub enum Token {
     Keyword(KeywordType),
     IntLit(String),
-    Semi,
     Iden(String),
+    Semi,
+    Eq,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum KeywordType {
     Exit,
-    Test,
+    Let,
 }
 
 impl KeywordType {
@@ -22,6 +23,7 @@ impl KeywordType {
     fn to_keyword(word: &str) -> Option<KeywordType> {
         match word {
             "exit" => Some(KeywordType::Exit),
+            "let" => Some(KeywordType::Let),
             _ => None,
         }
     }
@@ -81,6 +83,10 @@ pub fn tokenize(src: String) -> Vec<Token> {
             c if c.is_alphabetic() => tokens.push(tokenize_iden(&mut tokenizer)),
             c if c.is_numeric() => tokens.push(tokenize_int_lit(&mut tokenizer)),
             c if c.is_whitespace() => {
+                tokenizer.consume(0);
+            }
+            '=' => {
+                tokens.push(Token::Eq);
                 tokenizer.consume(0);
             }
             ';' => {
