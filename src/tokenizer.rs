@@ -1,6 +1,7 @@
-use std::{fmt::Write, process::exit};
+use crate::peeker::Peeker;
+use std::process::exit;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Token {
     Keyword(KeywordType),
     IntLit(String),
@@ -8,9 +9,10 @@ pub enum Token {
     Iden(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum KeywordType {
     Exit,
+    Test,
 }
 
 impl KeywordType {
@@ -30,15 +32,9 @@ pub struct Tokenizer {
     pub curr_idx: usize,
 }
 
-trait Peaker<T> {
-    fn peak(&mut self, offset: usize) -> Option<T>;
-    fn consume(&mut self, offset: usize) -> Option<T>;
-}
-
-impl Peaker<char> for Tokenizer {
-    fn peak(&mut self, offset: usize) -> Option<char> {
+impl Peeker<char> for Tokenizer {
+    fn peek(&self, offset: usize) -> Option<char> {
         if self.curr_idx + offset >= self.source.len() {
-            println!("Reached end of source");
             return None;
         }
         let c = self.source[self.curr_idx + offset];
@@ -46,7 +42,7 @@ impl Peaker<char> for Tokenizer {
     }
 
     fn consume(&mut self, offset: usize) -> Option<char> {
-        let c = self.peak(offset);
+        let c = self.peek(offset);
         self.curr_idx += offset + 1;
         c
     }
@@ -54,7 +50,7 @@ impl Peaker<char> for Tokenizer {
 
 pub fn tokenize_iden(tokenizer: &mut Tokenizer) -> Token {
     let mut iden = String::new();
-    while tokenizer.peak(0).is_some_and(|c| c.is_alphanumeric()) {
+    while tokenizer.peek(0).is_some_and(|c| c.is_alphanumeric()) {
         iden.push(tokenizer.consume(0).unwrap());
     }
 
@@ -67,8 +63,8 @@ pub fn tokenize_iden(tokenizer: &mut Tokenizer) -> Token {
 
 pub fn tokenize_int_lit(tokenizer: &mut Tokenizer) -> Token {
     let mut int_lit = String::new();
-    while tokenizer.peak(0).is_some_and(|c| c.is_numeric()) {
-        write!(&mut int_lit, "{}", tokenizer.consume(0).unwrap()).unwrap();
+    while tokenizer.peek(0).is_some_and(|c| c.is_numeric()) {
+        int_lit.push(tokenizer.consume(0).unwrap());
     }
     Token::IntLit(int_lit)
 }
@@ -80,7 +76,7 @@ pub fn tokenize(src: String) -> Vec<Token> {
     };
 
     let mut tokens: Vec<Token> = vec![];
-    while let Some(c) = tokenizer.peak(0) {
+    while let Some(c) = tokenizer.peek(0) {
         match c {
             c if c.is_alphabetic() => tokens.push(tokenize_iden(&mut tokenizer)),
             c if c.is_numeric() => tokens.push(tokenize_int_lit(&mut tokenizer)),
