@@ -14,6 +14,7 @@ fn main() {
     println!("Found tokens: {:?}", tokens);
 
     let assembly = parser::parse(tokens);
+    let assembly = assembly.unwrap();
     println!("Generated assembly:\n\n{}", assembly);
 
     fs::write(outfile, assembly).unwrap();

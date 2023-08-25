@@ -1,7 +1,7 @@
 use crate::peeker::Peeker;
 use std::process::exit;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     Keyword(KeywordType),
     IntLit(String),
@@ -9,7 +9,7 @@ pub enum Token {
     Iden(String),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum KeywordType {
     Exit,
     Test,
